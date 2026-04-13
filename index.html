@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roger Sebastiany — Engineer, Architect, Thinker</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Roger Sebastiany — Software Engineer & Cloud Architect. Explore the Tautologia Ontologica knowledge graph and The Grimoire of the Computer Scientist.">
+  <meta name="keywords" content="roger sebastiany, software engineer, cloud architect, knowledge graph, neo4j, tautologia ontologica, computer science, card game">
+  <meta name="author" content="Roger Sebastiany">
+  <link rel="canonical" href="https://rogersebastiany.com.br">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://rogersebastiany.com.br">
+  <meta property="og:title" content="Roger Sebastiany — Engineer, Architect, Thinker">
+  <meta property="og:description" content="Knowledge graph visualization and interactive grimoire of computer science.">
+  <meta property="og:image" content="https://rogersebastiany.com.br/Xgolden Ontological Tautology.webp">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="Roger Sebastiany — Engineer, Architect, Thinker">
+  <meta property="twitter:image" content="https://rogersebastiany.com.br/Xgolden Ontological Tautology.webp">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/webp" href="./summon computer sciencepng.webp">
+
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=IM+Fell+English:ital@0;1&family=MedievalSharp&display=swap">
+
+  <!-- Deck styles — loaded BEFORE our overrides so we win -->
+  <link rel="stylesheet" href="./deck-style.css">
+
+  <style>
+    /* ══════════════════════════════════════════════
+       GLOBAL — single page shell
+       ══════════════════════════════════════════════ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    /* Override deck-style.css body rules (our <style> loads after deck CSS) */
+    body {
+      background: #06080f;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      display: block;
+    }
+    /* Restore deck font inside deck section */
+    #deck-section {
+      font-family: 'IM Fell English', serif;
+      color: var(--ink);
+    }
+
+    /* ── Floating nav pill ── */
+    .nav-pill {
+      position: fixed;
+      bottom: 1.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      gap: 0.25rem;
+      background: rgba(10, 14, 23, 0.85);
+      border: 0.0625rem solid rgba(255,255,255,0.08);
+      border-radius: 2.5rem;
+      padding: 0.375rem 0.5rem;
+      backdrop-filter: blur(1rem);
+      -webkit-backdrop-filter: blur(1rem);
+      box-shadow: 0 0.5rem 2rem rgba(0,0,0,0.5);
+    }
+    .nav-pill a {
+      color: #90A4AE;
+      text-decoration: none;
+      padding: 0.625rem 1.375rem;
+      border-radius: 1.875rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.03125rem;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    .nav-pill a:hover, .nav-pill a.active {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+    }
+    .nav-pill a.active {
+      background: rgba(33, 150, 243, 0.2);
+      color: #90CAF9;
+    }
+
+    /* ══════════════════════════════════════════════
+       SECTION 1 — Hero + Knowledge Graph
+       ══════════════════════════════════════════════ */
+    #ontology-section {
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Graph is the full-bleed background */
+    #graph-container {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    #viz {
+      width: 100%;
+      height: 100%;
+    }
+    /* Let vertical scroll pass through the graph canvas */
+    #viz canvas {
+      touch-action: pan-y;
+    }
+
+    /* Hero floats on top, clicks pass through to graph */
+    .hero {
+      text-align: center;
+      padding: 2.5rem 1.25rem 1.25rem;
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hero h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 400;
+      letter-spacing: 0.25rem;
+      background: linear-gradient(135deg, #90CAF9 0%, #E3F2FD 40%, #c9a84c 70%, #e8d48b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .hero .tagline {
+      font-family: 'IM Fell English', serif;
+      font-size: clamp(0.9rem, 2vw, 1.15rem);
+      color: #78909C;
+      font-style: italic;
+      margin-bottom: 0.25rem;
+    }
+    .hero .sub {
+      font-size: 0.75rem;
+      color: #455A64;
+      letter-spacing: 0.125rem;
+      text-transform: uppercase;
+    }
+
+    /* ── Desktop-only overlays (hidden — burger replaces them) ── */
+    .graph-controls,
+    .graph-search,
+    .graph-stats,
+    .graph-legend { display: none !important; }
+
+    .legend-row { display: flex; align-items: center; gap: 0.375rem; margin: 0.125rem 0; font-size: 0.6875rem; color: #90A4AE; }
+    .legend-dot { width: 0.625rem; height: 0.625rem; border-radius: 50%; flex-shrink: 0; }
+
+    #graph-tooltip {
+      display: none;
+      position: fixed;
+      z-index: 20;
+      background: rgba(10, 14, 23, 0.95);
+      border: 0.0625rem solid rgba(255,255,255,0.08);
+      border-radius: 0.5rem;
+      padding: 0.625rem 0.875rem;
+      max-width: 18.75rem;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      pointer-events: none;
+      backdrop-filter: blur(0.5rem);
+    }
+    #graph-tooltip .tt-name { color: #90CAF9; font-weight: 600; }
+    #graph-tooltip .tt-meta { color: #546E7A; font-size: 0.6875rem; }
+    #graph-tooltip .tt-summary { color: #90A4AE; margin-top: 0.25rem; }
+
+    /* ── Zoom controls (Neo4j style) — inside ontology section ── */
+    .zoom-controls {
+      position: absolute;
+      bottom: 5rem;
+      right: 1rem;
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      background: rgba(10, 14, 23, 0.9);
+      border: 0.0625rem solid rgba(255,255,255,0.08);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      backdrop-filter: blur(0.5rem);
+      box-shadow: 0 0.25rem 1rem rgba(0,0,0,0.4);
+    }
+    .zoom-controls button {
+      background: transparent;
+      color: #90A4AE;
+      border: none;
+      width: 2.25rem; height: 2.25rem;
+      cursor: pointer;
+      font-size: 1.125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .zoom-controls button:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .zoom-controls button:active { background: rgba(33, 150, 243, 0.2); color: #90CAF9; }
+    .zoom-controls .zoom-sep {
+      height: 0.0625rem;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* ── Burger menu (always visible) ── */
+    .burger-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      z-index: 15;
+      background: rgba(15, 20, 35, 0.9);
+      color: #B0BEC5;
+      border: 0.0625rem solid rgba(255,255,255,0.08);
+      width: 2.625rem; height: 2.625rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1.25rem;
+      backdrop-filter: blur(0.5rem);
+      transition: all 0.2s;
+    }
+    .burger-btn:hover { color: #fff; background: rgba(30, 45, 70, 0.9); }
+    .burger-btn.open { color: #90CAF9; }
+
+    .burger-panel {
+      display: none;
+      position: absolute;
+      top: 3.75rem; right: 0.75rem; width: 20rem; max-width: calc(100% - 1.5rem);
+      z-index: 14;
+      background: rgba(6, 8, 15, 0.98);
+      border: 0.0625rem solid rgba(255,255,255,0.12);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      backdrop-filter: blur(1.5rem);
+      max-height: calc(100vh - 6.25rem);
+      overflow-y: auto;
+    }
+    .burger-panel.open { display: block; }
+    .burger-panel .panel-section { margin-bottom: 0.875rem; }
+    .burger-panel .panel-section:last-child { margin-bottom: 0; }
+    .burger-panel .panel-label { font-size: 0.625rem; color: #546E7A; text-transform: uppercase; letter-spacing: 0.0625rem; margin-bottom: 0.375rem; }
+    .burger-panel .panel-views { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .burger-panel .panel-views button {
+      background: rgba(15, 20, 35, 0.85);
+      color: #B0BEC5;
+      border: 0.0625rem solid rgba(255,255,255,0.06);
+      padding: 0.5rem 0.875rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      backdrop-filter: blur(0.5rem);
+      transition: all 0.2s;
+    }
+    .burger-panel .panel-views button:hover { background: rgba(30, 45, 70, 0.9); color: #fff; }
+    .burger-panel .panel-views button.active { background: rgba(33, 150, 243, 0.2); color: #90CAF9; border-color: rgba(33,150,243,0.3); }
+    .burger-panel .panel-search input {
+      width: 100%;
+      background: rgba(15, 20, 35, 0.85);
+      color: #e0e0e0;
+      border: 0.0625rem solid rgba(255,255,255,0.06);
+      padding: 0.625rem 1rem;
+      border-radius: 0.625rem;
+      font-size: 0.875rem;
+      outline: none;
+    }
+    .burger-panel .panel-search input:focus { border-color: rgba(33,150,243,0.4); }
+    .burger-panel .panel-search input::placeholder { color: #546E7A; }
+    .burger-panel .panel-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+    .burger-panel .panel-legend .legend-row { font-size: 0.75rem; }
+
+    /* ── Mobile breakpoint ── */
+    @media (max-width: 48rem) {
+      .hero { padding: 1rem 1rem 0.625rem; }
+      .hero h1 { font-size: clamp(1.4rem, 6vw, 2rem); letter-spacing: 0.125rem; margin-bottom: 0.25rem; }
+      .hero .tagline { font-size: clamp(0.8rem, 3vw, 1rem); }
+      .hero .sub { font-size: 0.625rem; letter-spacing: 0.0625rem; }
+      .nav-pill { bottom: 1rem; }
+      .nav-pill a { padding: 0.5rem 1rem; font-size: 0.75rem; }
+    }
+
+    /* ── Transition divider ── */
+    .section-divider {
+      text-align: center;
+      padding: 3.75rem 1.25rem;
+      position: relative;
+    }
+    .section-divider::before {
+      content: '';
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      top: 50%;
+      height: 0.0625rem;
+      background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), rgba(33,150,243,0.3), transparent);
+    }
+    .divider-icon {
+      position: relative;
+      display: inline-block;
+      background: #06080f;
+      padding: 0 1.25rem;
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.5rem;
+      color: #c9a84c;
+      opacity: 0.5;
+    }
+
+    /* ══════════════════════════════════════════════
+       SECTION 2 — Deck (The Grimoire)
+       Deck CSS is loaded from deck-style.css.
+       We scope overrides here.
+       ══════════════════════════════════════════════ */
+    #deck-section {
+      min-height: 100vh;
+      position: relative;
+    }
+    /* Replicate body flex centering the deck originally relied on */
+    #deck-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #deck-section #app {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #deck-section .header {
+      padding-top: 2.5rem;
+    }
+    /* Keep book nav inside deck section, not visible at top of page */
+    #deck-section .book-nav-wrapper {
+      position: sticky;
+      bottom: 0;
+      z-index: 100;
+    }
+    /* Scope hogsmeade bg to deck section only */
+    #deck-section .hogsmeade-bg {
+      position: absolute;
+      z-index: 0;
+    }
+    /* Scope particles to deck section */
+    #deck-section .particles {
+      position: absolute;
+    }
+    /* Scope glitter to deck section */
+    #deck-section .glitter-container {
+      position: absolute;
+    }
+
+    /* ── Footer override ── */
+    #deck-section .footer {
+      background: rgba(10, 14, 23, 0.95);
+      border-top: 1px solid rgba(201,168,76,0.15);
+      max-width: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     FLOATING NAV
+     ════════════════════════════════════════════════ -->
+<nav class="nav-pill" id="navPill">
+  <a href="#ontology-section" class="active" data-section="ontology-section">Ontology</a>
+  <a href="#deck-section" data-section="deck-section">Grimoire</a>
+</nav>
+
+<!-- ════════════════════════════════════════════════
+     SECTION 1 — Knowledge Graph
+     ════════════════════════════════════════════════ -->
+<section id="ontology-section">
+
+  <div class="hero">
+    <h1>Roger Sebastiany</h1>
+    <p class="tagline">Software Engineer & Cloud Architect</p>
+    <p class="sub">Tautologia Ontologica — Knowledge Graph</p>
+  </div>
+
+  <div id="graph-container">
+    <div id="viz"></div>
+
+    <!-- Desktop overlays -->
+    <div class="graph-controls" id="graphControls">
+      <button onclick="loadView('full')" class="active">Full Graph</button>
+      <button onclick="loadView('hubs')">Top 30 Hubs</button>
+      <button onclick="loadView('thesis')">Thesis Core</button>
+      <button onclick="loadView('agent')">Agent Concepts</button>
+      <button onclick="loadView('implements')">IMPLEMENTS</button>
+      <button onclick="loadView('requires')">REQUIRES</button>
+      <button onclick="loadView('composes')">COMPOSES</button>
+      <button onclick="loadView('enables')">ENABLES</button>
+      <button onclick="loadView('security')">Security</button>
+    </div>
+
+    <div class="graph-search">
+      <input type="text" id="searchInput" placeholder="Search concepts..." oninput="searchNode(this.value)">
+    </div>
+
+    <div class="graph-stats" id="graphStats"></div>
+
+    <div class="graph-legend">
+      <h4>Node = dominant edge</h4>
+      <div class="legend-row"><div class="legend-dot" style="background:#42A5F5"></div>COMPOSES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#66BB6A"></div>IMPLEMENTS</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#EF5350"></div>REQUIRES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#AB47BC"></div>ENABLES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#26A69A"></div>EXTENDS</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FFA726"></div>PROVES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#5C6BC0"></div>FORMALIZES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#29B6F6"></div>DEFINES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#EC407A"></div>ANALOGOUS</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#7E57C2"></div>EXEMPLIFIES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FF7043"></div>REDUCES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#26C6DA"></div>MITIGATES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#9CCC65"></div>INFERS</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#8D6E63"></div>EVOLVES</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#E53935"></div>CONTRADICTS</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#90A4AE"></div>RELATES_TO</div>
+      <h4 style="margin-top:8px">Border = vault</h4>
+      <div class="legend-row"><div class="legend-dot" style="background:transparent;border:2px solid #B0BEC5"></div>Cognee</div>
+      <div class="legend-row"><div class="legend-dot" style="background:transparent;border:2px solid #00E676"></div>Agent</div>
+      <div class="legend-row"><div class="legend-dot" style="background:transparent;border:2px solid #546E7A"></div>Ghost</div>
+    </div>
+
+    <!-- Mobile burger menu -->
+    <button class="burger-btn" id="burgerBtn" onclick="toggleBurger()">&#9776;</button>
+    <div class="burger-panel" id="burgerPanel">
+      <div class="panel-section">
+        <div class="panel-label">Search</div>
+        <div class="panel-search">
+          <input type="text" id="mobileSearchInput" placeholder="Search concepts..." oninput="searchNode(this.value)">
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Views</div>
+        <div class="panel-views" id="mobileViews">
+          <button onclick="loadView('full');closeBurger()" class="active">Full Graph</button>
+          <button onclick="loadView('hubs');closeBurger()">Top 30 Hubs</button>
+          <button onclick="loadView('thesis');closeBurger()">Thesis Core</button>
+          <button onclick="loadView('agent');closeBurger()">Agent</button>
+          <button onclick="loadView('implements');closeBurger()">IMPLEMENTS</button>
+          <button onclick="loadView('requires');closeBurger()">REQUIRES</button>
+          <button onclick="loadView('composes');closeBurger()">COMPOSES</button>
+          <button onclick="loadView('enables');closeBurger()">ENABLES</button>
+          <button onclick="loadView('security');closeBurger()">Security</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Legend — node color = dominant edge</div>
+        <div class="panel-legend">
+          <div class="legend-row"><div class="legend-dot" style="background:#42A5F5"></div>COMPOSES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#66BB6A"></div>IMPLEMENTS</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#EF5350"></div>REQUIRES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#AB47BC"></div>ENABLES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#26A69A"></div>EXTENDS</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#FFA726"></div>PROVES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#5C6BC0"></div>FORMALIZES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#29B6F6"></div>DEFINES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#EC407A"></div>ANALOGOUS</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#7E57C2"></div>EXEMPLIFIES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#FF7043"></div>REDUCES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#26C6DA"></div>MITIGATES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#9CCC65"></div>INFERS</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#8D6E63"></div>EVOLVES</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#E53935"></div>CONTRADICTS</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#90A4AE"></div>RELATES_TO</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="graph-tooltip">
+      <div class="tt-name" id="ttName"></div>
+      <div class="tt-meta" id="ttMeta"></div>
+      <div class="tt-summary" id="ttSummary"></div>
+    </div>
+  </div>
+
+  <!-- Zoom controls (inside ontology section) -->
+  <div class="zoom-controls" id="zoomControls">
+    <button onclick="graphZoom(1)" title="Zoom in">+</button>
+    <div class="zoom-sep"></div>
+    <button onclick="graphZoom(-1)" title="Zoom out">&minus;</button>
+    <div class="zoom-sep"></div>
+    <button onclick="graphFitAll()" title="Fit all">&#11036;</button>
+  </div>
+
+</section>
+
+<!-- ── Divider ── -->
+<div class="section-divider">
+  <span class="divider-icon">&diams;</span>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SECTION 2 — The Grimoire (Deck)
+     ════════════════════════════════════════════════ -->
+<section id="deck-section">
+  <div id="app">
+
+    <!-- Glitter overlay -->
+    <div class="glitter-container" id="glitterContainer"></div>
+
+    <!-- Hogsmeade Background Scene -->
+    <div class="hogsmeade-bg" id="hogsmeadeBg"></div>
+
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header class="header">
+      <h1>The Grimoire</h1>
+      <div class="divider"></div>
+      <p class="subtitle">
+        Software Engineering & Cloud Architecture, reimagined as a mystical card collection.
+      </p>
+      <div class="divider"></div>
+      <span class="card-code">28 Cards &bull; 5 Archetypes</span>
+    </header>
+
+    <!-- Book Scene -->
+    <section class="book-scene"
+      @touchstart="onTouchStart"
+      @touchend="onTouchEnd">
+
+      <!-- Closed Book -->
+      <div class="book-closed" :class="{ hidden: bookIsOpen }" @click="openBookWithGlitter($event)">
+        <div class="book-cover">
+          <div class="cover-border"></div>
+          <div class="corner-ornament tl"></div>
+          <div class="corner-ornament tr"></div>
+          <div class="corner-ornament bl"></div>
+          <div class="corner-ornament br"></div>
+          <div class="cover-title">
+            <h2>The Grimoire<br><span style="font-size: 0.85em; opacity: 0.9;">of the</span><br>Computer Scientist</h2>
+            <p class="cover-sub">28 Cards &bull; 5 specialized archetypes</p>
+          </div>
+        </div>
+        <div class="book-pages-edge"></div>
+        <div class="belt">
+          <div class="belt-strap"></div>
+          <div class="belt-buckle"></div>
+        </div>
+        <span class="click-hint">Click the buckle to open</span>
+      </div>
+
+      <!-- Open Book -->
+      <div class="book-open" :class="{ visible: bookIsOpen }">
+        <div class="book-base"></div>
+        <div class="book-spine"></div>
+        <button class="close-book-btn" @click="bookIsOpen = false" title="Close Book">
+          <span class="close-icon">&times;</span>
+        </button>
+        <!-- Left Page -->
+        <div class="page-left">
+          <div class="page-content">
+            <transition name="page-flip" mode="out-in">
+              <div v-if="spread.type === 'toc'" key="toc-left" class="page-inner">
+                <div class="toc-title">Table of Contents</div>
+                <div class="toc-divider"></div>
+                <div v-for="(cat, ci) in categories" :key="ci" class="toc-section">
+                  <h4>{{ tocTitle(cat) }}</h4>
+                  <div v-for="idx in cat.count" :key="idx" class="toc-entry" @click="goToCardGlitter($event, cat.startIdx + idx - 1)">
+                    {{ cards[cat.startIdx + idx - 1].title }}
+                  </div>
+                </div>
+              </div>
+              <div v-else-if="spread.type === 'category'" :key="'cat-l-' + spread.catIndex" class="page-inner">
+                <div class="category-page">
+                  <h2 v-html="catTitleHtml(spread.catIndex)"></h2>
+                  <div class="cat-divider"></div>
+                  <p>{{ categories[spread.catIndex].desc }}</p>
+                  <div class="card-count">{{ categories[spread.catIndex].count }} card{{ categories[spread.catIndex].count > 1 ? 's' : '' }}</div>
+                </div>
+              </div>
+              <div v-else :key="'card-l-' + spread.cardIndex" :class="['page-inner', { 'golden-card': currentCard && currentCard.golden }]">
+                <div class="card-category">{{ currentCard.category }}</div>
+                <div class="card-title">{{ currentCard.title }}</div>
+                <div class="card-type-badge">{{ (currentCard.properties && currentCard.properties['Card Type']) ? currentCard.properties['Card Type'] : currentCard.type }}</div>
+                <div v-if="currentCard.properties && currentCard.properties.Level && currentCard.properties.Level !== '\u2014'" :class="['card-stars', getStarClass(currentCard.properties.Level)]">
+                  <span v-for="n in (parseInt(currentCard.properties.Level) || 0)" :key="n">&#10026;</span>
+                </div>
+                <div class="stats-grid">
+                  <template v-if="currentCard.properties">
+                    <div v-if="currentCard.properties.Attribute && currentCard.properties.Attribute !== '\u2014'" class="stat-item"><div class="stat-label">Attribute</div><div class="stat-value">{{ currentCard.properties.Attribute }}</div></div>
+                    <div v-if="currentCard.properties.Level && currentCard.properties.Level !== '\u2014'" class="stat-item"><div class="stat-label">Level</div><div class="stat-value">{{ currentCard.properties.Level }}</div></div>
+                    <div v-if="currentCard.properties.Type" class="stat-item"><div class="stat-label">Type</div><div class="stat-value">{{ currentCard.properties.Type }}</div></div>
+                    <div class="stat-item"><div class="stat-label">ATK</div><div class="stat-value">{{ currentCard.properties.ATK }}</div></div>
+                    <div class="stat-item"><div class="stat-label">DEF</div><div class="stat-value">{{ currentCard.properties.DEF }}</div></div>
+                  </template>
+                </div>
+                <div class="card-text-section">
+                  <div class="card-effect" v-html="formatEffect(currentCard)"></div>
+                  <div class="card-artwork-desc"><strong>Artwork</strong><span v-html="formatArtwork(currentCard.artwork)"></span></div>
+                </div>
+              </div>
+            </transition>
+          </div>
+          <span class="page-number">{{ leftPageNum }}</span>
+        </div>
+        <!-- Right Page -->
+        <div class="page-right">
+          <div class="page-content">
+            <transition name="page-flip" mode="out-in">
+              <div v-if="spread.type === 'toc'" key="toc-right" class="card-image-container" @click="openModal({title: 'Computer Scientist Summon', image: './summon computer sciencepng.webp'})">
+                <img v-lazy="'./summon computer sciencepng.webp'" alt="Computer Scientist Summon" decoding="async" style="cursor: zoom-in;">
+                <div class="img-shimmer"></div>
+              </div>
+              <div v-else-if="spread.type === 'category'" :key="'cat-r-' + spread.catIndex" class="page-inner">
+                <div class="category-page">
+                  <div style="font-size:4rem;opacity:0.15;color:var(--gold-dark);font-family:'Cinzel Decorative',serif;">{{ catSymbol(spread.catIndex) }}</div>
+                </div>
+              </div>
+              <div v-else :key="'card-r-' + spread.cardIndex" class="card-image-container" @click="openModal(currentCard)">
+                <img v-lazy="currentCard.image" :alt="currentCard.title" decoding="async" style="cursor: zoom-in;">
+                <div class="img-shimmer"></div>
+              </div>
+            </transition>
+          </div>
+          <span class="page-number">{{ rightPageNum }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <div class="book-nav-wrapper">
+      <div class="book-nav" v-if="bookIsOpen">
+        <div class="nav-progress" :style="{ width: progressWidth }"></div>
+        <button class="nav-btn" :disabled="currentSpread === 0" @click="prevPageGlitter($event)">&larr;</button>
+        <span class="page-indicator">{{ currentSpread + 1 }} / {{ spreads.length }}</span>
+        <button class="nav-btn" :disabled="currentSpread === spreads.length - 1" @click="nextPageGlitter($event)">&rarr;</button>
+        <span class="swipe-hint" :class="{ show: showSwipeHint }">swipe to turn pages</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <h3>Contact</h3>
+      <div class="footer-links">
+        <a href="mailto:rogersebastiany@gmail.com"><span class="link-icon">&#9993;</span> rogersebastiany@gmail.com</a>
+        <a href="https://wa.me/5551982741369" target="_blank"><span class="link-icon">&#128172;</span> WhatsApp</a>
+        <a href="https://github.com/rogersebastiany" target="_blank"><span class="link-icon">&#128187;</span> GitHub</a>
+        <a href="https://www.linkedin.com/in/rogersebastiany/" target="_blank"><span class="link-icon">&#127760;</span> LinkedIn</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 &bull; Roger Sebastiany</p>
+    </footer>
+
+    <!-- Enlarged Card Modal -->
+    <transition name="fade">
+      <div v-if="isModalOpen" class="card-modal" @click.self="closeModal">
+        <div class="modal-content">
+          <button class="modal-close" @click="closeModal">&times;</button>
+          <img :src="modalCard.image" :alt="modalCard.title" class="enlarged-card">
+        </div>
+      </div>
+    </transition>
+
+  </div><!-- /#app -->
+</section>
+
+<!-- ════════════════════════════════════════════════
+     SCRIPTS
+     ════════════════════════════════════════════════ -->
+<script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+<script src="./graph-data.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+// KNOWLEDGE GRAPH VISUALIZATION
+// ══════════════════════════════════════════════════
+const NODE_COLORS = {
+  COMPOSES:     { bg: '#1565C0', hi: '#42A5F5', shadow: 'rgba(66,165,245,0.6)' },
+  IMPLEMENTS:   { bg: '#2E7D32', hi: '#66BB6A', shadow: 'rgba(102,187,106,0.6)' },
+  REQUIRES:     { bg: '#C62828', hi: '#EF5350', shadow: 'rgba(239,83,80,0.6)' },
+  ENABLES:      { bg: '#6A1B9A', hi: '#AB47BC', shadow: 'rgba(171,71,188,0.6)' },
+  EXTENDS:      { bg: '#00695C', hi: '#26A69A', shadow: 'rgba(38,166,154,0.6)' },
+  PROVES:       { bg: '#E65100', hi: '#FFA726', shadow: 'rgba(255,167,38,0.6)' },
+  CONTRADICTS:  { bg: '#B71C1C', hi: '#E53935', shadow: 'rgba(229,57,53,0.7)' },
+  RELATES_TO:   { bg: '#546E7A', hi: '#90A4AE', shadow: 'rgba(144,164,174,0.4)' },
+  FORMALIZES:   { bg: '#283593', hi: '#5C6BC0', shadow: 'rgba(92,107,192,0.6)' },
+  DEFINES:      { bg: '#0277BD', hi: '#29B6F6', shadow: 'rgba(41,182,246,0.6)' },
+  ANALOGOUS_TO: { bg: '#AD1457', hi: '#EC407A', shadow: 'rgba(236,64,122,0.6)' },
+  REDUCES:      { bg: '#BF360C', hi: '#FF7043', shadow: 'rgba(255,112,67,0.6)' },
+  MITIGATES:    { bg: '#00838F', hi: '#26C6DA', shadow: 'rgba(38,198,218,0.6)' },
+  EXEMPLIFIES:  { bg: '#4527A0', hi: '#7E57C2', shadow: 'rgba(126,87,194,0.6)' },
+  INFERS:       { bg: '#558B2F', hi: '#9CCC65', shadow: 'rgba(156,204,101,0.6)' },
+  EVOLVES_FROM: { bg: '#4E342E', hi: '#8D6E63', shadow: 'rgba(141,110,99,0.5)' },
+  NONE:         { bg: '#37474F', hi: '#78909C', shadow: 'rgba(120,144,156,0.3)' },
+};
+const VAULT_BORDERS = { cognee: '#B0BEC5', agent: '#00E676', ghost: '#546E7A' };
+const EDGE_COLORS = {
+  COMPOSES:'#42A5F5', IMPLEMENTS:'#66BB6A', REQUIRES:'#EF5350', ENABLES:'#AB47BC',
+  EXTENDS:'#26A69A', PROVES:'#FFA726', CONTRADICTS:'#E53935', RELATES_TO:'#757575',
+  FORMALIZES:'#5C6BC0', DEFINES:'#29B6F6', ANALOGOUS_TO:'#EC407A', REDUCES:'#FF7043',
+  MITIGATES:'#26C6DA', EXEMPLIFIES:'#7E57C2', INFERS:'#9CCC65', EVOLVES_FROM:'#8D6E63',
+};
+
+const nodeById = {};
+GRAPH_DATA.nodes.forEach(n => { nodeById[n.id] = n; });
+
+let network = null, allVisNodes = null;
+
+function makeVisNode(n) {
+  const c = NODE_COLORS[n.dominant_edge] || NODE_COLORS.NONE;
+  const border = VAULT_BORDERS[n.vault] || VAULT_BORDERS.cognee;
+  const size = Math.min(10 + n.degree * 1.8, 55);
+  const fontSize = Math.min(10 + n.degree * 0.4, 18);
+  const bw = n.vault === 'agent' ? 3 : (n.vault === 'ghost' ? 1 : 2);
+  return {
+    id: n.id, label: n.name, size: size,
+    color: { background: c.bg, border: border,
+      highlight: { background: c.hi, border: '#fff' },
+      hover: { background: c.hi, border: '#fff' } },
+    font: { color: '#ECEFF1', size: fontSize, face: "'Segoe UI', system-ui, sans-serif", strokeWidth: 3, strokeColor: '#06080f' },
+    shadow: { enabled: true, color: c.shadow, size: 22, x: 0, y: 0 },
+    borderWidth: bw, borderWidthSelected: 4, _data: n,
+  };
+}
+
+function makeVisEdge(e) {
+  const color = EDGE_COLORS[e.type] || '#555';
+  const w = e.type === 'CONTRADICTS' ? 3 : (e.type === 'RELATES_TO' ? 0.5 : 1.5);
+  return {
+    id: e.id, from: e.source, to: e.target,
+    color: { color: color, highlight: color, hover: color, opacity: 0.6 },
+    font: { color: color, size: 7, strokeWidth: 0, align: 'middle' },
+    width: w, smooth: { type: 'continuous', roundness: 0.12 },
+    arrows: { to: { enabled: true, scaleFactor: 0.4 } },
+  };
+}
+
+function filterData(nodeFilter, edgeFilter) {
+  const nodes = GRAPH_DATA.nodes.filter(nodeFilter);
+  const ids = new Set(nodes.map(n => n.id));
+  const edges = GRAPH_DATA.edges.filter(e => ids.has(e.source) && ids.has(e.target) && (!edgeFilter || edgeFilter(e)));
+  return { nodes, edges };
+}
+
+function render(nodes, edges) {
+  const visNodes = new vis.DataSet(nodes.map(makeVisNode));
+  const visEdges = new vis.DataSet(edges.map(makeVisEdge));
+  allVisNodes = visNodes;
+  const container = document.getElementById('viz');
+  const options = {
+    physics: {
+      solver: 'forceAtlas2Based',
+      forceAtlas2Based: { gravitationalConstant: -80, centralGravity: 0.002, springLength: 160, springConstant: 0.025, damping: 0.85, avoidOverlap: 0.5 },
+      stabilization: { iterations: 300, fit: true }, maxVelocity: 25,
+    },
+    layout: { improvedLayout: false },
+    nodes: { shape: 'dot' }, edges: { selectionWidth: 2 },
+    interaction: { hover: true, tooltipDelay: 50, hideEdgesOnDrag: true, zoomView: false, dragView: true },
+  };
+  if (network) network.destroy();
+  network = new vis.Network(container, { nodes: visNodes, edges: visEdges }, options);
+  // Fit all nodes centered after stabilization
+  network.once('stabilizationIterationsDone', () => {
+    network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' } });
+  });
+
+  const tip = document.getElementById('graph-tooltip');
+  network.on('hoverNode', p => {
+    const v = visNodes.get(p.node);
+    if (!v || !v._data) return;
+    const d = v._data;
+    document.getElementById('ttName').textContent = d.name;
+    document.getElementById('ttMeta').textContent = d.vault + ' \u00b7 ' + d.degree + ' connections \u00b7 ' + (d.dominant_edge || '');
+    document.getElementById('ttSummary').textContent = d.summary || '';
+    tip.style.display = 'block';
+    const cx = (p.event && p.event.center) ? p.event.center.x : (p.pointer && p.pointer.DOM ? p.pointer.DOM.x : 0);
+    const cy = (p.event && p.event.center) ? p.event.center.y : (p.pointer && p.pointer.DOM ? p.pointer.DOM.y : 0);
+    tip.style.left = (cx + 15) + 'px';
+    tip.style.top = (cy + 15) + 'px';
+  });
+  network.on('blurNode', () => { tip.style.display = 'none'; });
+  network.on('dragStart', () => { tip.style.display = 'none'; });
+  network.on('doubleClick', p => {
+    if (!p.nodes.length) return;
+    const nid = p.nodes[0];
+    const ne = GRAPH_DATA.edges.filter(e => e.source === nid || e.target === nid);
+    const nids = new Set([nid]);
+    ne.forEach(e => { nids.add(e.source); nids.add(e.target); });
+    render(GRAPH_DATA.nodes.filter(n => nids.has(n.id)), ne);
+    document.getElementById('graphStats').innerHTML = GRAPH_DATA.nodes.filter(n => nids.has(n.id)).length + ' nodes \u00b7 ' + ne.length + ' edges \u00b7 ' + nodeById[nid].name;
+    document.querySelectorAll('.graph-controls button').forEach(b => b.classList.remove('active'));
+  });
+  document.getElementById('graphStats').innerHTML = nodes.length + ' nodes \u00b7 ' + edges.length + ' edges';
+}
+
+function loadView(view) {
+  _lastView = view;
+  document.querySelectorAll('.graph-controls button, .panel-views button').forEach(b => b.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+  let d;
+  switch (view) {
+    case 'full':
+      render(GRAPH_DATA.nodes, GRAPH_DATA.edges);
+      break;
+    case 'hubs':
+      const top = [...GRAPH_DATA.nodes].sort((a,b) => b.degree - a.degree).slice(0, 30);
+      const topIds = new Set(top.map(n => n.id));
+      const nids = new Set(topIds);
+      GRAPH_DATA.edges.forEach(e => { if (topIds.has(e.source)) nids.add(e.target); if (topIds.has(e.target)) nids.add(e.source); });
+      d = filterData(n => nids.has(n.id)); render(d.nodes, d.edges); break;
+    case 'thesis':
+      d = filterData(n => n.vault === 'cognee'); render(d.nodes, d.edges); break;
+    case 'agent':
+      const aIds = new Set(GRAPH_DATA.nodes.filter(n => n.vault === 'agent').map(n => n.id));
+      const aN = new Set(aIds);
+      GRAPH_DATA.edges.forEach(e => { if (aIds.has(e.source)) aN.add(e.target); if (aIds.has(e.target)) aN.add(e.source); });
+      d = filterData(n => aN.has(n.id)); render(d.nodes, d.edges); break;
+    case 'implements': case 'requires': case 'composes': case 'enables':
+      const t = view.toUpperCase();
+      d = filterData(() => true, e => e.type === t);
+      const eIds = new Set(); d.edges.forEach(e => { eIds.add(e.source); eIds.add(e.target); });
+      render(d.nodes.filter(n => eIds.has(n.id)), d.edges); break;
+    case 'security':
+      const sec = ['OWASP','Security','Authentication','CWE','Session','Identity'];
+      const sIds = new Set();
+      GRAPH_DATA.nodes.forEach(n => { if (sec.some(s => n.name.includes(s))) sIds.add(n.id); });
+      const s2 = new Set(sIds);
+      GRAPH_DATA.edges.forEach(e => { if (sIds.has(e.source)) s2.add(e.target); if (sIds.has(e.target)) s2.add(e.source); });
+      d = filterData(n => s2.has(n.id)); render(d.nodes, d.edges); break;
+  }
+}
+
+let _lastView = 'full';
+let _searchTimeout = null;
+
+function searchNode(q) {
+  // Sync both search inputs
+  document.getElementById('searchInput').value = q;
+  document.getElementById('mobileSearchInput').value = q;
+
+  clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(function() {
+    if (!network || !allVisNodes) return;
+    if (!q.trim()) { network.unselectAll(); return; }
+    const ql = q.toLowerCase();
+    // Find matches within the currently rendered nodes only
+    const matches = [];
+    allVisNodes.forEach(n => {
+      if (n.label && n.label.toLowerCase().includes(ql)) matches.push(n.id);
+    });
+    if (!matches.length) return;
+    // Select and focus on the matches
+    network.selectNodes(matches, true);
+    if (matches.length <= 3) {
+      network.focus(matches[0], { scale: 1.0, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    } else {
+      network.fit({ nodes: matches, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    }
+  }, 300);
+}
+
+// Init graph
+loadView('full');
+
+// Scroll behavior: graph never captures wheel — page always scrolls.
+// Users zoom the graph via pinch or ctrl+wheel.
+(function() {
+  const viz = document.getElementById('viz');
+  // Intercept wheel events on the viz canvas and let them scroll the page
+  viz.addEventListener('wheel', function(e) {
+    if (!e.ctrlKey) {
+      // Not a pinch/ctrl+wheel — let the page scroll
+      e.stopPropagation();
+      // vis.js already has zoomView:false, so this just ensures no interference
+    }
+  }, true); // capture phase
+})();
+
+// Zoom controls
+function graphZoom(dir) {
+  if (!network) return;
+  const scale = network.getScale();
+  const newScale = dir > 0 ? scale * 1.3 : scale / 1.3;
+  network.moveTo({ scale: newScale, animation: { duration: 200, easingFunction: 'easeInOutQuad' } });
+}
+function graphFitAll() {
+  if (!network) return;
+  network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+}
+
+// Burger menu
+function toggleBurger() {
+  const btn = document.getElementById('burgerBtn');
+  const panel = document.getElementById('burgerPanel');
+  btn.classList.toggle('open');
+  panel.classList.toggle('open');
+}
+function closeBurger() {
+  document.getElementById('burgerBtn').classList.remove('open');
+  document.getElementById('burgerPanel').classList.remove('open');
+}
+</script>
+
+<!-- Vue + Deck app -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js"></script>
+<script src="./deck-app.js"></script>
+
+<!-- Nav pill scroll tracking -->
+<script>
+(function() {
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.nav-pill a');
+  function onScroll() {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 200) current = s.id;
+    });
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('data-section') === current);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>
